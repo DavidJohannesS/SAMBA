@@ -1,0 +1,17 @@
+# Use an official Ubuntu runtime as a parent image
+FROM ubuntu:latest
+
+# Update the system
+RUN apt-get update
+
+# Install Samba
+RUN apt-get install -y samba
+
+# Copy the Samba configuration file into the container
+COPY smb.conf /etc/samba/
+
+# Expose the Samba ports
+EXPOSE 137/udp 138/udp 139 445
+
+# Run the Samba service when the container launches
+CMD ["smbd", "-FS"]
