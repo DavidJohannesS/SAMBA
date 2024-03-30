@@ -1,14 +1,21 @@
-# Use an official Ubuntu runtime as a parent image
-FROM ubuntu:latest
+# Use the Arch Linux image
+FROM archlinux:latest
 
-# Update the system
-RUN apt-get update
+# Update the system and install Samba
+RUN pacman -Syu --noconfirm samba
 
-# Install Samba
-RUN apt-get install -y samba
+# Copy the smb.conf file from your host to the container
+COPY smb.conf /etc/samba/smb.conf
+
+# Add a user to the system
+RUN useradd sambauser
+
+# Set a password for the user
+ARG SAMBA_PASSWORD
+RUN echo -e "$SAMBA_PASSWORD\n$SAMBA_PASSWORD" | smbpasswd -a -s sambauser
 
 # Expose the Samba ports
 EXPOSE 137/udp 138/udp 139 445
 
-# Run the Samba service when the container launches
-CMD ["smbd", "-FS"]
+# Start the Samba service and tail the log file
+CMD smbd -D -s /etc/samba/smb.conf && tail -f /var/log/samba/log.smbd
