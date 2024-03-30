@@ -2,8 +2,6 @@
 - hosts: testHost
   vars_files:
     - secrets.yml
-  vars:
-    samba_password: "{{ lookup('file', 'secrets.yaml')}}"
   tasks:
     - name: Ensure docker is installed
       apt:
@@ -18,7 +16,7 @@
 
     - name: Copy file
       copy:
-        src: samba-dockerfile
+        src: Dockerfile
         dest: /home/ansible/tmp
       when: not container_info.exists
 
@@ -28,31 +26,48 @@
         dest: /home/ansible/tmp
       when: not container_info.exists
 
+    - name: Copy start script
+      copy:
+        src: start.sh
+        dest: /home/ansible/tmp
+        mode: 0777
+
+    - name: Copy user setup script
+      copy:
+        src: user_setup.sh
+        dest: /home/ansible/tmp
+        mode: 0777
+
     - name: Build Docker image
       docker_image:
-        path: /home/ansible/tmp
         name: samba_img
-        buildargs:
-          SAMBA_PASSWORD: "{{ samba_password }}"
+        build:
+          path: /home/ansible/tmp
       when: not container_info.exists
+     
+#    - name: Check if Dockerfile exists
+#      stat:
+#        path: /home/ansible/tmp/Dockerfile
+#      register: dockerfile_stat
 
     - name: Delete Dockerfile
       file:
-        path: /home/ansible/tmp/samba-dockerfile
+        path: /home/ansible/tmp/Dockerfile
         state: absent
-      when: not container_info.exists
-
+#      when: not dockerfile_stat.exists
+ 
     - name: Run Docker container
       docker_container:
         name: samba_container
         image: samba_img
         state: started
         recreate: yes
-        exposed_ports:
-          - '137/udp'
-          - '138/udp'
-          - '139'
-          - '445'
+        volumes:
+          - "/home/udavid:/mnt"
+        env:
+          SAMBA_USER: "{{ samba_user }}"
+          SAMBA_PASSWORD: "{{ samba_password }}"
+        network_mode: host
       when: not container_info.exists
 
     - name: Start Docker container
