@@ -1,0 +1,25 @@
+---
+- name: Build Docker Image
+  hosts: testHost
+  tasks:
+    - name: Ensure docker is installed
+      apt:
+        name: docker.io
+        state: present
+      become: yes
+    - name: Copy file
+      copy:
+        src: samba-dockerfile
+        dest: /home/ansible/tmp
+
+    - name: Build Docker image
+      community.docker.docker_image_build:
+        path: /home/ansible/tmp
+        dockerfile: samba-dockerfile
+        name: samba_img
+
+    - name: Delete Dockerfile
+      file:
+        path: /home/ansible/tmp/samba-dockerfile
+        state: absent
+...

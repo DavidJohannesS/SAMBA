@@ -7,9 +7,6 @@ RUN apt-get update
 # Install Samba
 RUN apt-get install -y samba
 
-# Copy the Samba configuration file into the container
-COPY smb.conf /etc/samba/
-
 # Expose the Samba ports
 EXPOSE 137/udp 138/udp 139 445
 
